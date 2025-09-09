@@ -17,8 +17,8 @@ interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
   session: Session | null;
-  login: (email: string, password: string) => Promise<{ error: any }>;
-  register: (name: string, email: string, password: string, role: UserRole) => Promise<{ error: any }>;
+  login: (email: string, password: string) => Promise<{ error?: string }>;
+  register: (name: string, email: string, password: string, role: UserRole) => Promise<{ error?: string }>;
   logout: () => Promise<void>;
   isLoading: boolean;
 }
@@ -53,14 +53,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (session?.user) {
           // Fetch user profile
           setTimeout(async () => {
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single();
-            
-            if (profileData) {
-              setProfile(profileData);
+            try {
+              const { data: profileData, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
+              
+              if (error) {
+                console.error('Error fetching profile:', error);
+              } else {
+                setProfile(profileData);
+              }
+            } catch (error) {
+              console.error('Error in profile fetch:', error);
             }
           }, 0);
         } else {
@@ -75,60 +81,69 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        // Fetch user profile
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single()
-          .then(({ data: profileData }) => {
-            if (profileData) {
-              setProfile(profileData);
-            }
-            setIsLoading(false);
-          });
-      } else {
-        setIsLoading(false);
-      }
+      setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<{ error?: string }> => {
     setIsLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    setIsLoading(false);
-    return { error };
-  };
-
-  const register = async (name: string, email: string, password: string, role: UserRole) => {
-    setIsLoading(true);
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          full_name: name,
-          role: role,
-        }
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) {
+        return { error: error.message };
       }
-    });
-    
-    setIsLoading(false);
-    return { error };
+      
+      return {};
+    } catch (error) {
+      console.error('Login error:', error);
+      return { error: 'Erro inesperado durante o login' };
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const logout = async () => {
-    await supabase.auth.signOut();
+  const register = async (name: string, email: string, password: string, role: UserRole): Promise<{ error?: string }> => {
+    setIsLoading(true);
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            full_name: name,
+            role: role
+          }
+        }
+      });
+      
+      if (error) {
+        return { error: error.message };
+      }
+      
+      return {};
+    } catch (error) {
+      console.error('Registration error:', error);
+      return { error: 'Erro inesperado durante o cadastro' };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = async (): Promise<void> => {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const value: AuthContextType = {

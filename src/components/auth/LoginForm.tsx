@@ -3,9 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth, UserRole } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { User, Stethoscope, UserCheck, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 interface LoginFormProps {
   onToggleForm: () => void;
@@ -14,7 +14,6 @@ interface LoginFormProps {
 const LoginForm: React.FC<LoginFormProps> = ({ onToggleForm }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [selectedRole, setSelectedRole] = useState<UserRole>('patient');
   const { login, isLoading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,9 +28,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleForm }) => {
       return;
     }
 
-    const success = await login(email, password);
+    const { error } = await login(email, password);
     
-    if (!success.error) {
+    if (!error) {
       toast({
         title: "Login realizado com sucesso!",
         description: `Bem-vindo(a) ao sistema.`,
@@ -39,32 +38,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleForm }) => {
     } else {
       toast({
         title: "Erro no login",
-        description: success.error?.message || "Verifique suas credenciais e tente novamente.",
+        description: error,
         variant: "destructive",
       });
     }
   };
-
-  const roleOptions = [
-    {
-      id: 'patient' as UserRole,
-      label: 'Paciente',
-      description: 'Acesso para consultas e histórico',
-      icon: User,
-    },
-    {
-      id: 'attendant' as UserRole,
-      label: 'Atendente',
-      description: 'Gestão de atendimentos',
-      icon: UserCheck,
-    },
-    {
-      id: 'manager' as UserRole,
-      label: 'Gerente',
-      description: 'Administração completa',
-      icon: Stethoscope,
-    },
-  ];
 
   return (
     <Card className="w-full max-w-md shadow-medical">
@@ -76,36 +54,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleForm }) => {
       </CardHeader>
       <CardContent className="space-y-6">
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Role Selection */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">Tipo de Acesso</Label>
-            <div className="grid grid-cols-1 gap-2">
-              {roleOptions.map((role) => {
-                const Icon = role.icon;
-                return (
-                  <button
-                    key={role.id}
-                    type="button"
-                    onClick={() => setSelectedRole(role.id)}
-                    className={`p-3 rounded-lg border-2 text-left transition-all hover:shadow-sm ${
-                      selectedRole === role.id
-                        ? 'border-primary bg-accent text-accent-foreground'
-                        : 'border-border hover:border-primary/50'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Icon className="h-5 w-5 text-primary" />
-                      <div>
-                        <p className="font-medium">{role.label}</p>
-                        <p className="text-xs text-muted-foreground">{role.description}</p>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
           {/* Email Input */}
           <div className="space-y-2">
             <Label htmlFor="email">E-mail</Label>

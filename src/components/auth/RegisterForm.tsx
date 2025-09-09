@@ -49,17 +49,17 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onToggleForm }) => {
       return;
     }
 
-    const success = await register(name, email, password, selectedRole);
+    const { error } = await register(name, email, password, selectedRole);
     
-    if (!success.error) {
+    if (!error) {
       toast({
         title: "Cadastro realizado com sucesso!",
-        description: `Bem-vindo(a) ao sistema, ${name}!`,
+        description: `Verifique seu e-mail para confirmar a conta.`,
       });
     } else {
       toast({
         title: "Erro no cadastro",
-        description: success.error?.message || "Tente novamente em alguns minutos.",
+        description: error,
         variant: "destructive",
       });
     }
