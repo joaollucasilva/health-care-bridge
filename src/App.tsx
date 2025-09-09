@@ -14,14 +14,14 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const AppRoutes = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
-  if (!user) {
+  if (!user || !profile) {
     return <AuthPage />;
   }
 
   const renderDashboard = () => {
-    switch (user.role) {
+    switch (profile.role) {
       case 'patient':
         return <PatientDashboard />;
       case 'attendant':

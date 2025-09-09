@@ -1,19 +1,25 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
 export type UserRole = 'patient' | 'attendant' | 'manager';
 
-interface User {
+interface UserProfile {
   id: string;
-  name: string;
+  full_name: string;
   email: string;
   role: UserRole;
+  phone?: string;
+  avatar_url?: string;
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string, role: UserRole) => Promise<boolean>;
-  register: (name: string, email: string, password: string, role: UserRole) => Promise<boolean>;
-  logout: () => void;
+  profile: UserProfile | null;
+  session: Session | null;
+  login: (email: string, password: string) => Promise<{ error: any }>;
+  register: (name: string, email: string, password: string, role: UserRole) => Promise<{ error: any }>;
+  logout: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -33,62 +39,102 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = async (email: string, password: string, role: UserRole): Promise<boolean> => {
+  useEffect(() => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          // Fetch user profile
+          setTimeout(async () => {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+            
+            if (profileData) {
+              setProfile(profileData);
+            }
+          }, 0);
+        } else {
+          setProfile(null);
+        }
+        
+        setIsLoading(false);
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        // Fetch user profile
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single()
+          .then(({ data: profileData }) => {
+            if (profileData) {
+              setProfile(profileData);
+            }
+            setIsLoading(false);
+          });
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const login = async (email: string, password: string) => {
     setIsLoading(true);
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock successful login
-      const mockUser: User = {
-        id: '1',
-        name: role === 'patient' ? 'João Silva' : role === 'attendant' ? 'Maria Santos' : 'Dr. Carlos Lima',
-        email,
-        role,
-      };
-      
-      setUser(mockUser);
-      return true;
-    } catch (error) {
-      console.error('Login error:', error);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    setIsLoading(false);
+    return { error };
   };
 
-  const register = async (name: string, email: string, password: string, role: UserRole): Promise<boolean> => {
+  const register = async (name: string, email: string, password: string, role: UserRole) => {
     setIsLoading(true);
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock successful registration
-      const mockUser: User = {
-        id: Date.now().toString(),
-        name,
-        email,
-        role,
-      };
-      
-      setUser(mockUser);
-      return true;
-    } catch (error) {
-      console.error('Registration error:', error);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
+    const redirectUrl = `${window.location.origin}/`;
+    
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: {
+          full_name: name,
+          role: role,
+        }
+      }
+    });
+    
+    setIsLoading(false);
+    return { error };
   };
 
-  const logout = () => {
-    setUser(null);
+  const logout = async () => {
+    await supabase.auth.signOut();
   };
 
   const value: AuthContextType = {
     user,
+    profile,
+    session,
     login,
     register,
     logout,

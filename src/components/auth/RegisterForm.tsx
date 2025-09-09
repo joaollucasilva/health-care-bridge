@@ -51,7 +51,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onToggleForm }) => {
 
     const success = await register(name, email, password, selectedRole);
     
-    if (success) {
+    if (!success.error) {
       toast({
         title: "Cadastro realizado com sucesso!",
         description: `Bem-vindo(a) ao sistema, ${name}!`,
@@ -59,7 +59,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onToggleForm }) => {
     } else {
       toast({
         title: "Erro no cadastro",
-        description: "Tente novamente em alguns minutos.",
+        description: success.error?.message || "Tente novamente em alguns minutos.",
         variant: "destructive",
       });
     }

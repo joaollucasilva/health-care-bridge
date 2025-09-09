@@ -29,9 +29,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleForm }) => {
       return;
     }
 
-    const success = await login(email, password, selectedRole);
+    const success = await login(email, password);
     
-    if (success) {
+    if (!success.error) {
       toast({
         title: "Login realizado com sucesso!",
         description: `Bem-vindo(a) ao sistema.`,
@@ -39,7 +39,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleForm }) => {
     } else {
       toast({
         title: "Erro no login",
-        description: "Verifique suas credenciais e tente novamente.",
+        description: success.error?.message || "Verifique suas credenciais e tente novamente.",
         variant: "destructive",
       });
     }

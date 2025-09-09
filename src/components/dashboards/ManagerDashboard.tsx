@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 const ManagerDashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { profile } = useAuth();
 
   const teamStats = [
     {
@@ -114,7 +114,7 @@ const ManagerDashboard: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-primary">Dashboard Gerencial</h1>
-              <p className="text-muted-foreground">Bem-vindo, {user?.name}</p>
+              <p className="text-muted-foreground">Bem-vindo, {profile?.full_name}</p>
             </div>
             <div className="flex items-center space-x-3">
               <Button variant="outline" size="sm">

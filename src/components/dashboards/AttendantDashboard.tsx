@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 const AttendantDashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { profile } = useAuth();
 
   const activeChats = [
     {
@@ -110,7 +110,7 @@ const AttendantDashboard: React.FC = () => {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-primary">Olá, {user?.name}</h1>
+              <h1 className="text-2xl font-bold text-primary">Olá, {profile?.full_name}</h1>
               <p className="text-muted-foreground">Painel do Atendente</p>
             </div>
             <div className="flex items-center space-x-3">

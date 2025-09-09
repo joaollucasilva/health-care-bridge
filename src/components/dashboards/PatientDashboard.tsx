@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 const PatientDashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { profile } = useAuth();
 
   const recentMessages = [
     {
@@ -67,7 +67,7 @@ const PatientDashboard: React.FC = () => {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-primary">Bem-vindo, {user?.name}</h1>
+              <h1 className="text-2xl font-bold text-primary">Bem-vindo, {profile?.full_name}</h1>
               <p className="text-muted-foreground">Painel do Paciente</p>
             </div>
             <Button variant="medical">

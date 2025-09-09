@@ -8,7 +8,7 @@ interface DashboardLayoutProps {
 }
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
-  const { user, logout } = useAuth();
+  const { profile, logout } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -31,10 +31,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <User className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">{user?.name}</span>
+                <span className="text-sm font-medium">{profile?.full_name}</span>
                 <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                  {user?.role === 'patient' ? 'Paciente' : 
-                   user?.role === 'attendant' ? 'Atendente' : 'Gerente'}
+                  {profile?.role === 'patient' ? 'Paciente' : 
+                   profile?.role === 'attendant' ? 'Atendente' : 'Gerente'}
                 </span>
               </div>
               <Button
