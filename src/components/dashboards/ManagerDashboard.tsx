@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { NewAttendantModal } from '@/components/modals/NewAttendantModal';
 import { SettingsModal } from '@/components/modals/SettingsModal';
 import { ReportModal } from '@/components/modals/ReportModal';
+import { AttendantDetailsModal } from '@/components/modals/AttendantDetailsModal';
 import {
   BarChart,
   Users,
@@ -24,6 +25,8 @@ const ManagerDashboard: React.FC = () => {
   const [newAttendantModalOpen, setNewAttendantModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [attendantDetailsModalOpen, setAttendantDetailsModalOpen] = useState(false);
+  const [selectedAttendant, setSelectedAttendant] = useState<any>(null);
 
   const teamStats = [
     {
@@ -235,7 +238,14 @@ const ManagerDashboard: React.FC = () => {
               <CardContent>
                 <div className="space-y-4">
                   {teamStats.map((member, index) => (
-                    <div key={index} className="p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                    <div 
+                      key={index} 
+                      className="p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                      onClick={() => {
+                        setSelectedAttendant(member);
+                        setAttendantDetailsModalOpen(true);
+                      }}
+                    >
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center space-x-3">
                           <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
@@ -335,6 +345,13 @@ const ManagerDashboard: React.FC = () => {
         open={reportModalOpen} 
         onOpenChange={setReportModalOpen}
       />
+      {selectedAttendant && (
+        <AttendantDetailsModal
+          open={attendantDetailsModalOpen}
+          onOpenChange={setAttendantDetailsModalOpen}
+          attendant={selectedAttendant}
+        />
+      )}
     </div>
   );
 };

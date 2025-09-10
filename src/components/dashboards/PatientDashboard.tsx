@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { SettingsModal } from '@/components/modals/SettingsModal';
+import { ChatModal } from '@/components/modals/ChatModal';
+import { AllAppointmentsModal } from '@/components/modals/AllAppointmentsModal';
 import {
   Calendar,
   MessageCircle,
@@ -19,6 +21,9 @@ import {
 const PatientDashboard: React.FC = () => {
   const { profile } = useAuth();
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [chatModalOpen, setChatModalOpen] = useState(false);
+  const [allAppointmentsModalOpen, setAllAppointmentsModalOpen] = useState(false);
+  const [messagesModalOpen, setMessagesModalOpen] = useState(false);
 
   const recentMessages = [
     {
@@ -74,7 +79,7 @@ const PatientDashboard: React.FC = () => {
               <p className="text-muted-foreground">Painel do Paciente</p>
             </div>
             <div className="flex items-center space-x-3">
-              <Button variant="medical">
+              <Button variant="medical" onClick={() => setChatModalOpen(true)}>
                 <MessageCircle className="mr-2 h-4 w-4" />
                 Nova Mensagem
               </Button>
@@ -130,7 +135,7 @@ const PatientDashboard: React.FC = () => {
                   ))}
                 </div>
                 <div className="pt-4">
-                  <Button variant="outline" className="w-full">
+                  <Button variant="outline" className="w-full" onClick={() => setAllAppointmentsModalOpen(true)}>
                     Ver Todas as Consultas
                   </Button>
                 </div>
@@ -176,7 +181,7 @@ const PatientDashboard: React.FC = () => {
                   ))}
                 </div>
                 <div className="pt-4">
-                  <Button variant="outline" className="w-full">
+                  <Button variant="outline" className="w-full" onClick={() => setMessagesModalOpen(true)}>
                     Ver Todas as Mensagens
                   </Button>
                 </div>
@@ -247,10 +252,22 @@ const PatientDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Settings Modal */}
+      {/* Modals */}
       <SettingsModal 
         open={settingsModalOpen} 
         onOpenChange={setSettingsModalOpen}
+      />
+      <ChatModal 
+        open={chatModalOpen} 
+        onOpenChange={setChatModalOpen}
+      />
+      <AllAppointmentsModal 
+        open={allAppointmentsModalOpen} 
+        onOpenChange={setAllAppointmentsModalOpen}
+      />
+      <ChatModal 
+        open={messagesModalOpen} 
+        onOpenChange={setMessagesModalOpen}
       />
     </div>
   );

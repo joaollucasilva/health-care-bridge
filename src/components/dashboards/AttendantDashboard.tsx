@@ -4,6 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { SettingsModal } from '@/components/modals/SettingsModal';
+import { ScheduleAppointmentModal } from '@/components/modals/ScheduleAppointmentModal';
+import { SendReminderModal } from '@/components/modals/SendReminderModal';
+import { ViewScheduleModal } from '@/components/modals/ViewScheduleModal';
+import { ActiveConversationsModal } from '@/components/modals/ActiveConversationsModal';
 import {
   MessageCircle,
   Users,
@@ -21,6 +25,10 @@ import {
 const AttendantDashboard: React.FC = () => {
   const { profile } = useAuth();
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [reminderModalOpen, setReminderModalOpen] = useState(false);
+  const [viewScheduleModalOpen, setViewScheduleModalOpen] = useState(false);
+  const [activeConversationsModalOpen, setActiveConversationsModalOpen] = useState(false);
 
   const activeChats = [
     {
@@ -60,9 +68,9 @@ const AttendantDashboard: React.FC = () => {
   };
 
   const quickActions = [
-    { label: 'Agendar Consulta', icon: Calendar, variant: 'medical' as const, onClick: () => {} },
-    { label: 'Enviar Lembrete', icon: Clock, variant: 'healthcare' as const, onClick: () => {} },
-    { label: 'Ver Agenda', icon: Users, variant: 'outline' as const, onClick: () => {} },
+    { label: 'Agendar Consulta', icon: Calendar, variant: 'medical' as const, onClick: () => setScheduleModalOpen(true) },
+    { label: 'Enviar Lembrete', icon: Clock, variant: 'healthcare' as const, onClick: () => setReminderModalOpen(true) },
+    { label: 'Ver Agenda', icon: Users, variant: 'outline' as const, onClick: () => setViewScheduleModalOpen(true) },
     { label: 'Configurações', icon: Settings, variant: 'outline' as const, onClick: () => setSettingsModalOpen(true) },
   ];
 
@@ -194,7 +202,12 @@ const AttendantDashboard: React.FC = () => {
                     <MessageCircle className="mr-2 h-5 w-5 text-primary" />
                     Conversas Ativas
                   </span>
-                  <Badge variant="secondary">{activeChats.length}</Badge>
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="secondary">{activeChats.length}</Badge>
+                    <Button variant="outline" size="sm" onClick={() => setActiveConversationsModalOpen(true)}>
+                      Ver Todas
+                    </Button>
+                  </div>
                 </CardTitle>
                 <CardDescription>
                   Atendimentos em andamento e pendentes
@@ -227,7 +240,11 @@ const AttendantDashboard: React.FC = () => {
                         >
                           {chat.priority === 'high' ? 'Alta' : chat.priority === 'medium' ? 'Média' : 'Baixa'} Prioridade
                         </Badge>
-                        <Button size="sm" variant="outline">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => setActiveConversationsModalOpen(true)}
+                        >
                           Responder
                         </Button>
                       </div>
@@ -286,10 +303,26 @@ const AttendantDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Settings Modal */}
+      {/* Modals */}
       <SettingsModal 
         open={settingsModalOpen} 
         onOpenChange={setSettingsModalOpen}
+      />
+      <ScheduleAppointmentModal 
+        open={scheduleModalOpen} 
+        onOpenChange={setScheduleModalOpen}
+      />
+      <SendReminderModal 
+        open={reminderModalOpen} 
+        onOpenChange={setReminderModalOpen}
+      />
+      <ViewScheduleModal 
+        open={viewScheduleModalOpen} 
+        onOpenChange={setViewScheduleModalOpen}
+      />
+      <ActiveConversationsModal 
+        open={activeConversationsModalOpen} 
+        onOpenChange={setActiveConversationsModalOpen}
       />
     </div>
   );
