@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
+import { SettingsModal } from '@/components/modals/SettingsModal';
 import {
   Calendar,
   MessageCircle,
@@ -12,10 +13,12 @@ import {
   Mail,
   Instagram,
   Facebook,
+  Settings,
 } from 'lucide-react';
 
 const PatientDashboard: React.FC = () => {
   const { profile } = useAuth();
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 
   const recentMessages = [
     {
@@ -70,10 +73,16 @@ const PatientDashboard: React.FC = () => {
               <h1 className="text-2xl font-bold text-primary">Bem-vindo, {profile?.full_name}</h1>
               <p className="text-muted-foreground">Painel do Paciente</p>
             </div>
-            <Button variant="medical">
-              <MessageCircle className="mr-2 h-4 w-4" />
-              Nova Mensagem
-            </Button>
+            <div className="flex items-center space-x-3">
+              <Button variant="medical">
+                <MessageCircle className="mr-2 h-4 w-4" />
+                Nova Mensagem
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setSettingsModalOpen(true)}>
+                <Settings className="mr-2 h-4 w-4" />
+                Configurações
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -237,6 +246,12 @@ const PatientDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Settings Modal */}
+      <SettingsModal 
+        open={settingsModalOpen} 
+        onOpenChange={setSettingsModalOpen}
+      />
     </div>
   );
 };

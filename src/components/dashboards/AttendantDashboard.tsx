@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
+import { SettingsModal } from '@/components/modals/SettingsModal';
 import {
   MessageCircle,
   Users,
@@ -14,10 +15,12 @@ import {
   Instagram,
   Facebook,
   Calendar,
+  Settings,
 } from 'lucide-react';
 
 const AttendantDashboard: React.FC = () => {
   const { profile } = useAuth();
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 
   const activeChats = [
     {
@@ -57,9 +60,10 @@ const AttendantDashboard: React.FC = () => {
   };
 
   const quickActions = [
-    { label: 'Agendar Consulta', icon: Calendar, variant: 'medical' as const },
-    { label: 'Enviar Lembrete', icon: Clock, variant: 'healthcare' as const },
-    { label: 'Ver Agenda', icon: Users, variant: 'outline' as const },
+    { label: 'Agendar Consulta', icon: Calendar, variant: 'medical' as const, onClick: () => {} },
+    { label: 'Enviar Lembrete', icon: Clock, variant: 'healthcare' as const, onClick: () => {} },
+    { label: 'Ver Agenda', icon: Users, variant: 'outline' as const, onClick: () => {} },
+    { label: 'Configurações', icon: Settings, variant: 'outline' as const, onClick: () => setSettingsModalOpen(true) },
   ];
 
   const getChannelIcon = (channel: string) => {
@@ -117,7 +121,7 @@ const AttendantDashboard: React.FC = () => {
               {quickActions.map((action, index) => {
                 const Icon = action.icon;
                 return (
-                  <Button key={index} variant={action.variant} size="sm">
+                  <Button key={index} variant={action.variant} size="sm" onClick={action.onClick}>
                     <Icon className="mr-2 h-4 w-4" />
                     {action.label}
                   </Button>
@@ -281,6 +285,12 @@ const AttendantDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Settings Modal */}
+      <SettingsModal 
+        open={settingsModalOpen} 
+        onOpenChange={setSettingsModalOpen}
+      />
     </div>
   );
 };

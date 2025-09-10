@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
+import { NewAttendantModal } from '@/components/modals/NewAttendantModal';
+import { SettingsModal } from '@/components/modals/SettingsModal';
+import { ReportModal } from '@/components/modals/ReportModal';
 import {
   BarChart,
   Users,
@@ -18,6 +21,9 @@ import {
 
 const ManagerDashboard: React.FC = () => {
   const { profile } = useAuth();
+  const [newAttendantModalOpen, setNewAttendantModalOpen] = useState(false);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
 
   const teamStats = [
     {
@@ -117,15 +123,15 @@ const ManagerDashboard: React.FC = () => {
               <p className="text-muted-foreground">Bem-vindo, {profile?.full_name}</p>
             </div>
             <div className="flex items-center space-x-3">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => setReportModalOpen(true)}>
                 <Download className="mr-2 h-4 w-4" />
                 Relatório
               </Button>
-              <Button variant="healthcare" size="sm">
+              <Button variant="healthcare" size="sm" onClick={() => setNewAttendantModalOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 Novo Atendente
               </Button>
-              <Button variant="medical" size="sm">
+              <Button variant="medical" size="sm" onClick={() => setSettingsModalOpen(true)}>
                 <Settings className="mr-2 h-4 w-4" />
                 Configurações
               </Button>
@@ -315,6 +321,20 @@ const ManagerDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      <NewAttendantModal 
+        open={newAttendantModalOpen} 
+        onOpenChange={setNewAttendantModalOpen}
+      />
+      <SettingsModal 
+        open={settingsModalOpen} 
+        onOpenChange={setSettingsModalOpen}
+      />
+      <ReportModal 
+        open={reportModalOpen} 
+        onOpenChange={setReportModalOpen}
+      />
     </div>
   );
 };
