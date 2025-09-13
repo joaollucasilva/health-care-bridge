@@ -123,6 +123,7 @@ export type Database = {
           id: string
           last_message_at: string | null
           patient_id: string
+          priority: string | null
           status: Database["public"]["Enums"]["conversation_status"] | null
           subject: string | null
           updated_at: string | null
@@ -134,6 +135,7 @@ export type Database = {
           id?: string
           last_message_at?: string | null
           patient_id: string
+          priority?: string | null
           status?: Database["public"]["Enums"]["conversation_status"] | null
           subject?: string | null
           updated_at?: string | null
@@ -145,6 +147,7 @@ export type Database = {
           id?: string
           last_message_at?: string | null
           patient_id?: string
+          priority?: string | null
           status?: Database["public"]["Enums"]["conversation_status"] | null
           subject?: string | null
           updated_at?: string | null
@@ -274,6 +277,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          read: boolean | null
+          title: string
+          type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          read?: boolean | null
+          title: string
+          type?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          read?: boolean | null
+          title?: string
+          type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       performance_metrics: {
         Row: {
