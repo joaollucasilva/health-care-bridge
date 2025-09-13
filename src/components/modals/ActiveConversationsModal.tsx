@@ -7,73 +7,23 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { MessageCircle, Phone, Mail, Instagram, Send, Clock } from 'lucide-react';
+import { useConversations } from '@/hooks/useConversations';
+import { useMessages } from '@/hooks/useMessages';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface ActiveConversationsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-interface Conversation {
-  id: number;
-  patient: string;
-  channel: 'whatsapp' | 'email' | 'instagram';
-  lastMessage: string;
-  time: string;
-  priority: 'high' | 'medium' | 'low';
-  status: 'active' | 'waiting' | 'resolved';
-  messages: Array<{
-    id: number;
-    content: string;
-    sender: 'patient' | 'attendant';
-    timestamp: string;
-  }>;
-}
 
 export function ActiveConversationsModal({ open, onOpenChange }: ActiveConversationsModalProps) {
-  const [selectedConversation, setSelectedConversation] = useState<number | null>(null);
+  const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
-
-  const conversations: Conversation[] = [
-    {
-      id: 1,
-      patient: 'Maria Silva',
-      channel: 'whatsapp',
-      lastMessage: 'Preciso remarcar minha consulta',
-      time: '14:30',
-      priority: 'high',
-      status: 'waiting',
-      messages: [
-        { id: 1, content: 'Boa tarde! Preciso remarcar minha consulta de amanhã.', sender: 'patient', timestamp: '14:25' },
-        { id: 2, content: 'Olá Maria! Claro, posso ajudar com isso. Qual seria o melhor dia para você?', sender: 'attendant', timestamp: '14:27' },
-        { id: 3, content: 'Preciso remarcar minha consulta', sender: 'patient', timestamp: '14:30' },
-      ],
-    },
-    {
-      id: 2,
-      patient: 'João Santos',
-      channel: 'email',
-      lastMessage: 'Quando fica pronto o resultado?',
-      time: '14:15',
-      priority: 'medium',
-      status: 'waiting',
-      messages: [
-        { id: 1, content: 'Bom dia! Gostaria de saber quando ficará pronto o resultado do meu exame.', sender: 'patient', timestamp: '14:10' },
-        { id: 2, content: 'Quando fica pronto o resultado?', sender: 'patient', timestamp: '14:15' },
-      ],
-    },
-    {
-      id: 3,
-      patient: 'Ana Costa',
-      channel: 'instagram',
-      lastMessage: 'Obrigada pelo atendimento!',
-      time: '13:45',
-      priority: 'low',
-      status: 'resolved',
-      messages: [
-        { id: 1, content: 'Obrigada pelo excelente atendimento de hoje!', sender: 'patient', timestamp: '13:45' },
-      ],
-    },
-  ];
+  const { conversations, loading } = useConversations();
+  const { messages, sendMessage } = useMessages(selectedConversation);
+  const { user, profile } = useAuth();
 
   const getChannelIcon = (channel: string) => {
     switch (channel) {
@@ -114,12 +64,19 @@ export function ActiveConversationsModal({ open, onOpenChange }: ActiveConversat
     }
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedConversation) return;
 
-    // Here you would send the message to your backend
-    console.log('Sending message:', newMessage, 'to conversation:', selectedConversation);
-    setNewMessage('');
+    try {
+      const selectedConv = conversations.find(c => c.id === selectedConversation);
+      if (selectedConv) {
+        await sendMessage(newMessage, selectedConv.channel);
+        setNewMessage('');
+        toast.success('Mensagem enviada com sucesso!');
+      }
+    } catch (error) {
+      toast.error('Erro ao enviar mensagem');
+    }
   };
 
   const selectedConv = conversations.find(c => c.id === selectedConversation);
@@ -142,39 +99,51 @@ export function ActiveConversationsModal({ open, onOpenChange }: ActiveConversat
             </CardHeader>
             <CardContent className="p-0">
               <ScrollArea className="h-[calc(70vh-100px)]">
-                <div className="space-y-2 p-4">
-                  {conversations.map((conv) => (
-                    <div
-                      key={conv.id}
-                      onClick={() => setSelectedConversation(conv.id)}
-                      className={`p-3 rounded-lg border cursor-pointer transition-all hover:shadow-sm ${
-                        selectedConversation === conv.id 
-                          ? 'border-primary bg-primary/5' 
-                          : getPriorityColor(conv.priority)
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center space-x-2">
-                          {getChannelIcon(conv.channel)}
-                          <h4 className="font-medium text-sm">{conv.patient}</h4>
+                {loading ? (
+                  <div className="p-4 text-center text-muted-foreground">
+                    Carregando conversas...
+                  </div>
+                ) : conversations.length === 0 ? (
+                  <div className="p-4 text-center text-muted-foreground">
+                    Nenhuma conversa encontrada
+                  </div>
+                ) : (
+                  <div className="space-y-2 p-4">
+                    {conversations.map((conv) => (
+                      <div
+                        key={conv.id}
+                        onClick={() => setSelectedConversation(conv.id)}
+                        className={`p-3 rounded-lg border cursor-pointer transition-all hover:shadow-sm ${
+                          selectedConversation === conv.id 
+                            ? 'border-primary bg-primary/5' 
+                            : getPriorityColor(conv.priority)
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center space-x-2">
+                            {getChannelIcon(conv.channel)}
+                            <h4 className="font-medium text-sm">{conv.patient_profile?.full_name || 'Paciente'}</h4>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <Clock className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(conv.last_message_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-1">
-                          <Clock className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">{conv.time}</span>
+                        <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
+                          {conv.last_message?.content || conv.subject || 'Sem mensagens'}
+                        </p>
+                        <div className="flex items-center justify-between">
+                          {getStatusBadge(conv.status)}
+                          <Badge variant="outline" className="text-xs">
+                            {conv.priority === 'high' ? 'Alta' : conv.priority === 'medium' ? 'Média' : 'Baixa'}
+                          </Badge>
                         </div>
                       </div>
-                      <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
-                        {conv.lastMessage}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        {getStatusBadge(conv.status)}
-                        <Badge variant="outline" className="text-xs">
-                          {conv.priority === 'high' ? 'Alta' : conv.priority === 'medium' ? 'Média' : 'Baixa'}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </ScrollArea>
             </CardContent>
           </Card>
@@ -188,7 +157,7 @@ export function ActiveConversationsModal({ open, onOpenChange }: ActiveConversat
                     <div className="flex items-center space-x-3">
                       {getChannelIcon(selectedConv.channel)}
                       <div>
-                        <CardTitle className="text-base">{selectedConv.patient}</CardTitle>
+                        <CardTitle className="text-base">{selectedConv.patient_profile?.full_name || 'Paciente'}</CardTitle>
                         <p className="text-sm text-muted-foreground">
                           {selectedConv.channel} • {getStatusBadge(selectedConv.status)}
                         </p>
@@ -204,38 +173,44 @@ export function ActiveConversationsModal({ open, onOpenChange }: ActiveConversat
                   {/* Messages */}
                   <ScrollArea className="flex-1 p-4">
                     <div className="space-y-4">
-                      {selectedConv.messages.map((msg) => (
-                        <div
-                          key={msg.id}
-                          className={`flex ${msg.sender === 'attendant' ? 'justify-end' : 'justify-start'}`}
-                        >
+                      {messages.map((msg) => {
+                        const isFromCurrentUser = msg.sender_id === user?.id;
+                        return (
                           <div
-                            className={`flex items-start space-x-2 max-w-[80%] ${
-                              msg.sender === 'attendant' ? 'flex-row-reverse space-x-reverse' : ''
-                            }`}
+                            key={msg.id}
+                            className={`flex ${isFromCurrentUser ? 'justify-end' : 'justify-start'}`}
                           >
-                            <Avatar className="w-8 h-8">
-                              <AvatarFallback>
-                                {msg.sender === 'attendant' ? 'AT' : selectedConv.patient.charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
                             <div
-                              className={`p-3 rounded-lg ${
-                                msg.sender === 'attendant'
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'bg-muted'
+                              className={`flex items-start space-x-2 max-w-[80%] ${
+                                isFromCurrentUser ? 'flex-row-reverse space-x-reverse' : ''
                               }`}
                             >
-                              <p className="text-sm">{msg.content}</p>
-                              <p className={`text-xs mt-1 ${
-                                msg.sender === 'attendant' ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                              }`}>
-                                {msg.timestamp}
-                              </p>
+                              <Avatar className="w-8 h-8">
+                                <AvatarFallback>
+                                  {isFromCurrentUser 
+                                    ? profile?.full_name?.charAt(0) || 'U'
+                                    : selectedConv?.patient_profile?.full_name?.charAt(0) || 'P'
+                                  }
+                                </AvatarFallback>
+                              </Avatar>
+                              <div
+                                className={`p-3 rounded-lg ${
+                                  isFromCurrentUser
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-muted'
+                                }`}
+                              >
+                                <p className="text-sm">{msg.content}</p>
+                                <p className={`text-xs mt-1 ${
+                                  isFromCurrentUser ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                                }`}>
+                                  {new Date(msg.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </ScrollArea>
 
