@@ -62,6 +62,7 @@ const PatientDashboard: React.FC = () => {
   ];
 
   const communicationChannels = [
+    { name: 'Chat do Site', icon: MessageCircle, color: 'text-primary', available: true },
     { name: 'WhatsApp', icon: Phone, color: 'text-green-600', available: true },
     { name: 'E-mail', icon: Mail, color: 'text-blue-600', available: true },
     { name: 'Instagram', icon: Instagram, color: 'text-pink-600', available: true },

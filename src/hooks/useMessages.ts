@@ -48,7 +48,7 @@ export function useMessages(conversationId: string | null) {
     }
   };
 
-  const sendMessage = async (content: string, channel: 'whatsapp' | 'email' | 'instagram' | 'facebook' | 'phone' | 'web_chat') => {
+  const sendMessage = async (content: string, channel: 'web_chat' | 'whatsapp' | 'email' | 'instagram' | 'facebook' | 'phone') => {
     if (!conversationId || !user) return;
 
     try {

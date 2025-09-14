@@ -76,6 +76,8 @@ const AttendantDashboard: React.FC = () => {
 
   const getChannelIcon = (channel: string) => {
     switch (channel) {
+      case 'web_chat':
+        return <MessageCircle className="h-4 w-4 text-primary" />;
       case 'whatsapp':
         return <Phone className="h-4 w-4 text-green-600" />;
       case 'email':

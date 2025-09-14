@@ -16,7 +16,7 @@ interface ChatModalProps {
 
 export function ChatModal({ open, onOpenChange }: ChatModalProps) {
   const [message, setMessage] = useState('');
-  const [selectedChannel, setSelectedChannel] = useState<'whatsapp' | 'email' | 'instagram' | 'facebook'>('whatsapp');
+  const [selectedChannel, setSelectedChannel] = useState<'web_chat' | 'whatsapp' | 'email' | 'instagram' | 'facebook' | 'phone'>('web_chat');
   const [messages, setMessages] = useState<any[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const { user, profile } = useAuth();
@@ -111,6 +111,7 @@ export function ChatModal({ open, onOpenChange }: ChatModalProps) {
   }, [conversationId]);
 
   const channels = [
+    { id: 'web_chat' as const, name: 'Chat do Site', icon: MessageCircle, color: 'text-primary' },
     { id: 'whatsapp' as const, name: 'WhatsApp', icon: Phone, color: 'text-green-600' },
     { id: 'email' as const, name: 'E-mail', icon: Mail, color: 'text-blue-600' },
     { id: 'instagram' as const, name: 'Instagram', icon: Instagram, color: 'text-pink-600' },
