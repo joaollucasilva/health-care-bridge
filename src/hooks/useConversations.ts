@@ -26,10 +26,10 @@ interface Conversation {
 export function useConversations() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const fetchConversations = async () => {
-    if (!user) return;
+    if (!user || !profile) return;
 
     try {
       let query = supabase
@@ -41,6 +41,15 @@ export function useConversations() {
           last_message:messages(content)
         `)
         .order('last_message_at', { ascending: false });
+
+      // Filter conversations based on user role
+      if (profile.role === 'patient') {
+        query = query.eq('patient_id', user.id);
+      } else if (profile.role === 'attendant') {
+        // Attendants see unassigned conversations or conversations assigned to them
+        query = query.or(`attendant_id.is.null,attendant_id.eq.${user.id}`);
+      }
+      // Managers can see all conversations (no additional filter)
 
       const { data, error } = await query;
 
@@ -104,7 +113,7 @@ export function useConversations() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, profile]);
 
   return { conversations, loading, refetch: fetchConversations };
 }

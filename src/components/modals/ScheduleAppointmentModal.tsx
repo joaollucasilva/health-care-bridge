@@ -10,6 +10,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface ScheduleAppointmentModalProps {
   open: boolean;
@@ -23,6 +26,8 @@ export function ScheduleAppointmentModal({ open, onOpenChange }: ScheduleAppoint
   const [doctor, setDoctor] = useState('');
   const [time, setTime] = useState('');
   const [notes, setNotes] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
 
   const doctors = [
     'Dr. Carlos Lima - Cardiologia',
@@ -37,18 +42,59 @@ export function ScheduleAppointmentModal({ open, onOpenChange }: ScheduleAppoint
     '16:00', '16:30', '17:00', '17:30',
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would typically send the data to your backend
-    console.log({
-      patientName,
-      patientEmail,
-      doctor,
-      date,
-      time,
-      notes,
-    });
-    onOpenChange(false);
+    if (!date || !time || !doctor || !patientName || !patientEmail || !user) return;
+
+    setLoading(true);
+    try {
+      // Find existing patient profile
+      const { data: existingPatient } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', patientEmail)
+        .single();
+
+      if (!existingPatient) {
+        toast.error('Paciente não encontrado no sistema. O paciente deve estar registrado antes de agendar uma consulta.');
+        return;
+      }
+
+      // Create appointment
+      const scheduledDateTime = new Date(date);
+      const [hours, minutes] = time.split(':');
+      scheduledDateTime.setHours(parseInt(hours), parseInt(minutes));
+
+      const { error: appointmentError } = await supabase
+        .from('appointments')
+        .insert({
+          patient_id: existingPatient.id,
+          attendant_id: user.id,
+          scheduled_at: scheduledDateTime.toISOString(),
+          title: `Consulta - ${doctor}`,
+          description: notes || `Consulta com ${doctor}`,
+          notes: notes,
+          status: 'scheduled'
+        });
+
+      if (appointmentError) throw appointmentError;
+
+      toast.success('Consulta agendada com sucesso!');
+      onOpenChange(false);
+      
+      // Reset form
+      setDate(undefined);
+      setPatientName('');
+      setPatientEmail('');
+      setDoctor('');
+      setTime('');
+      setNotes('');
+    } catch (error: any) {
+      console.error('Error scheduling appointment:', error);
+      toast.error('Erro ao agendar consulta: ' + (error.message || 'Erro desconhecido'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -163,8 +209,8 @@ export function ScheduleAppointmentModal({ open, onOpenChange }: ScheduleAppoint
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit" variant="medical">
-              Agendar Consulta
+            <Button type="submit" variant="medical" disabled={loading}>
+              {loading ? 'Agendando...' : 'Agendar Consulta'}
             </Button>
           </div>
         </form>
