@@ -3,6 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTeamStats } from '@/hooks/useTeamStats';
+import { usePerformanceStats } from '@/hooks/usePerformanceStats';
 import { NewAttendantModal } from '@/components/modals/NewAttendantModal';
 import { SettingsModal } from '@/components/modals/SettingsModal';
 import { ReportModal } from '@/components/modals/ReportModal';
@@ -22,73 +24,37 @@ import {
 
 const ManagerDashboard: React.FC = () => {
   const { profile } = useAuth();
+  const { teamMembers } = useTeamStats();
+  const { stats } = usePerformanceStats();
   const [newAttendantModalOpen, setNewAttendantModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [attendantDetailsModalOpen, setAttendantDetailsModalOpen] = useState(false);
   const [selectedAttendant, setSelectedAttendant] = useState<any>(null);
 
-  const teamStats = [
-    {
-      name: 'Maria Santos',
-      role: 'Atendente Sênior',
-      chatsToday: 32,
-      avgResponse: '2m 15s',
-      satisfaction: 98,
-      status: 'online',
-    },
-    {
-      name: 'João Silva',
-      role: 'Atendente',
-      chatsToday: 28,
-      avgResponse: '3m 45s',
-      satisfaction: 95,
-      status: 'online',
-    },
-    {
-      name: 'Ana Costa',
-      role: 'Atendente',
-      chatsToday: 24,
-      avgResponse: '4m 12s',
-      satisfaction: 92,
-      status: 'busy',
-    },
-  ];
-
   const systemMetrics = {
-    totalChatsToday: 156,
-    avgResponseTime: '3m 24s',
-    resolutionRate: 94,
+    totalChatsToday: stats.totalConversations,
+    avgResponseTime: stats.avgResponseTime,
+    resolutionRate: stats.totalConversations > 0 ? Math.round((stats.resolvedConversations / stats.totalConversations) * 100) : 0,
     customerSatisfaction: 4.7,
     activeChannels: 4,
   };
 
+  // Simplified alerts and channel performance for now (can be expanded later with real data)
   const recentAlerts = [
     {
       id: 1,
-      type: 'warning',
-      message: 'Tempo de resposta acima da média no WhatsApp',
-      time: '14:30',
-    },
-    {
-      id: 2,
       type: 'info',
-      message: 'Nova integração Instagram disponível',
-      time: '13:15',
-    },
-    {
-      id: 3,
-      type: 'success',
-      message: 'Meta mensal de satisfação atingida',
-      time: '12:00',
+      message: 'Sistema funcionando normalmente',
+      time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
     },
   ];
 
   const channelPerformance = [
-    { name: 'WhatsApp', chats: 89, conversion: 78, color: 'bg-green-500' },
-    { name: 'E-mail', chats: 34, conversion: 65, color: 'bg-blue-500' },
-    { name: 'Instagram', chats: 23, conversion: 72, color: 'bg-pink-500' },
-    { name: 'Facebook', chats: 10, conversion: 60, color: 'bg-blue-700' },
+    { name: 'Chat do Site', chats: Math.floor(stats.totalConversations * 0.4), conversion: 85, color: 'bg-primary' },
+    { name: 'WhatsApp', chats: Math.floor(stats.totalConversations * 0.3), conversion: 78, color: 'bg-green-500' },
+    { name: 'E-mail', chats: Math.floor(stats.totalConversations * 0.2), conversion: 65, color: 'bg-blue-500' },
+    { name: 'Instagram', chats: Math.floor(stats.totalConversations * 0.1), conversion: 72, color: 'bg-pink-500' },
   ];
 
   const getStatusColor = (status: string) => {
@@ -237,7 +203,8 @@ const ManagerDashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {teamStats.map((member, index) => (
+                  {teamMembers.length > 0 ? (
+                    teamMembers.map((member, index) => (
                     <div 
                       key={index} 
                       className="p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
@@ -275,7 +242,14 @@ const ManagerDashboard: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  ))
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Users className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                      <p>Nenhuma equipe cadastrada</p>
+                      <p className="text-sm">Membros da equipe aparecerão aqui</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

@@ -3,6 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
+import { useConversations } from '@/hooks/useConversations';
+import { usePerformanceStats } from '@/hooks/usePerformanceStats';
 import { SettingsModal } from '@/components/modals/SettingsModal';
 import { ScheduleAppointmentModal } from '@/components/modals/ScheduleAppointmentModal';
 import { SendReminderModal } from '@/components/modals/SendReminderModal';
@@ -24,47 +26,33 @@ import {
 
 const AttendantDashboard: React.FC = () => {
   const { profile } = useAuth();
+  const { conversations } = useConversations();
+  const { stats } = usePerformanceStats();
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [reminderModalOpen, setReminderModalOpen] = useState(false);
   const [viewScheduleModalOpen, setViewScheduleModalOpen] = useState(false);
   const [activeConversationsModalOpen, setActiveConversationsModalOpen] = useState(false);
 
-  const activeChats = [
-    {
-      id: 1,
-      patient: 'Maria Silva',
-      channel: 'whatsapp',
-      lastMessage: 'Preciso remarcar minha consulta',
-      time: '14:30',
-      priority: 'high',
-      status: 'active',
-    },
-    {
-      id: 2,
-      patient: 'João Santos',
-      channel: 'email',
-      lastMessage: 'Quando fica pronto o resultado?',
-      time: '14:15',
-      priority: 'medium',
-      status: 'waiting',
-    },
-    {
-      id: 3,
-      patient: 'Ana Costa',
-      channel: 'instagram',
-      lastMessage: 'Obrigada pelo atendimento!',
-      time: '13:45',
-      priority: 'low',
-      status: 'resolved',
-    },
-  ];
+  // Get active chats from real conversations
+  const activeChats = conversations
+    .filter(conv => conv.status === 'open' || conv.status === 'assigned')
+    .slice(0, 10)
+    .map(conv => ({
+      id: conv.id,
+      patient: conv.patient_profile?.full_name || 'Paciente',
+      channel: conv.channel,
+      lastMessage: conv.last_message?.content || 'Sem mensagens',
+      time: new Date(conv.last_message_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      priority: conv.priority || 'medium',
+      status: conv.status === 'open' ? 'waiting' : 'active',
+    }));
 
   const todayStats = {
-    totalChats: 24,
-    resolved: 18,
-    pending: 6,
-    avgResponseTime: '3m 24s',
+    totalChats: stats.totalConversations,
+    resolved: stats.resolvedConversations,
+    pending: stats.pendingConversations,
+    avgResponseTime: stats.avgResponseTime,
   };
 
   const quickActions = [
@@ -217,7 +205,8 @@ const AttendantDashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {activeChats.map((chat) => (
+                  {activeChats.length > 0 ? (
+                    activeChats.map((chat) => (
                     <div
                       key={chat.id}
                       className={`p-4 border rounded-lg cursor-pointer hover:shadow-sm transition-all ${getPriorityColor(chat.priority)}`}
@@ -251,7 +240,14 @@ const AttendantDashboard: React.FC = () => {
                         </Button>
                       </div>
                     </div>
-                  ))}
+                  ))
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <MessageCircle className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                      <p>Nenhuma conversa ativa</p>
+                      <p className="text-sm">Conversas dos pacientes aparecerão aqui</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

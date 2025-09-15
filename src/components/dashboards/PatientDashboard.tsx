@@ -3,6 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAppointments } from '@/hooks/useAppointments';
+import { useConversations } from '@/hooks/useConversations';
 import { SettingsModal } from '@/components/modals/SettingsModal';
 import { ChatModal } from '@/components/modals/ChatModal';
 import { AllAppointmentsModal } from '@/components/modals/AllAppointmentsModal';
@@ -20,46 +22,37 @@ import {
 
 const PatientDashboard: React.FC = () => {
   const { profile } = useAuth();
+  const { appointments } = useAppointments();
+  const { conversations } = useConversations();
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [chatModalOpen, setChatModalOpen] = useState(false);
   const [allAppointmentsModalOpen, setAllAppointmentsModalOpen] = useState(false);
   const [messagesModalOpen, setMessagesModalOpen] = useState(false);
 
-  const recentMessages = [
-    {
-      id: 1,
-      channel: 'whatsapp',
-      message: 'Confirmação de consulta para amanhã às 14h',
-      time: '10:30',
-      status: 'read',
-    },
-    {
-      id: 2,
-      channel: 'email',
-      message: 'Resultado do exame disponível',
-      time: '09:15',
-      status: 'unread',
-    },
-  ];
+  // Get upcoming appointments (next 5)
+  const upcomingAppointments = appointments
+    .filter(apt => new Date(apt.scheduled_at) > new Date())
+    .slice(0, 5)
+    .map(apt => ({
+      id: apt.id,
+      doctor: apt.attendant_profile?.full_name || 'Atendente não definido',
+      specialty: apt.title,
+      date: new Date(apt.scheduled_at).toLocaleDateString('pt-BR'),
+      time: new Date(apt.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      status: apt.status,
+    }));
 
-  const upcomingAppointments = [
-    {
-      id: 1,
-      doctor: 'Dr. Carlos Lima',
-      specialty: 'Cardiologia',
-      date: 'Amanhã',
-      time: '14:00',
-      status: 'confirmed',
-    },
-    {
-      id: 2,
-      doctor: 'Dra. Ana Silva',
-      specialty: 'Dermatologia',
-      date: '15/01/2024',
-      time: '10:30',
-      status: 'pending',
-    },
-  ];
+  // Get recent messages from conversations  
+  const recentMessages = conversations
+    .filter(conv => conv.last_message)
+    .slice(0, 5)
+    .map(conv => ({
+      id: conv.id,
+      channel: conv.channel,
+      message: conv.last_message?.content || '',
+      time: new Date(conv.last_message_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      status: 'read', // Simplified for now
+    }));
 
   const communicationChannels = [
     { name: 'Chat do Site', icon: MessageCircle, color: 'text-primary', available: true },
@@ -111,7 +104,8 @@ const PatientDashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {upcomingAppointments.map((appointment) => (
+                  {upcomingAppointments.length > 0 ? (
+                    upcomingAppointments.map((appointment) => (
                     <div
                       key={appointment.id}
                       className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
@@ -129,11 +123,23 @@ const PatientDashboard: React.FC = () => {
                         <Badge
                           variant={appointment.status === 'confirmed' ? 'default' : 'secondary'}
                         >
-                          {appointment.status === 'confirmed' ? 'Confirmada' : 'Pendente'}
+                          {appointment.status === 'confirmed' ? 'Confirmada' : 
+                           appointment.status === 'scheduled' ? 'Agendada' :
+                           appointment.status === 'completed' ? 'Concluída' :
+                           appointment.status === 'cancelled' ? 'Cancelada' :
+                           appointment.status === 'in_progress' ? 'Em andamento' :
+                           appointment.status === 'no_show' ? 'Faltou' : 'Pendente'}
                         </Badge>
                       </div>
                     </div>
-                  ))}
+                  ))
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Calendar className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                      <p>Nenhuma consulta agendada</p>
+                      <p className="text-sm">Suas próximas consultas aparecerão aqui</p>
+                    </div>
+                  )}
                 </div>
                 <div className="pt-4">
                   <Button variant="outline" className="w-full" onClick={() => setAllAppointmentsModalOpen(true)}>
@@ -156,7 +162,8 @@ const PatientDashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {recentMessages.map((message) => (
+                  {recentMessages.length > 0 ? (
+                    recentMessages.map((message) => (
                     <div
                       key={message.id}
                       className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-accent/50 transition-colors"
@@ -167,6 +174,15 @@ const PatientDashboard: React.FC = () => {
                         )}
                         {message.channel === 'email' && (
                           <Mail className="h-4 w-4 text-blue-600" />
+                        )}
+                        {message.channel === 'web_chat' && (
+                          <MessageCircle className="h-4 w-4 text-primary" />
+                        )}
+                        {message.channel === 'instagram' && (
+                          <Instagram className="h-4 w-4 text-pink-600" />
+                        )}
+                        {message.channel === 'facebook' && (
+                          <Facebook className="h-4 w-4 text-blue-700" />
                         )}
                       </div>
                       <div className="flex-1">
@@ -179,7 +195,14 @@ const PatientDashboard: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  ))
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <MessageCircle className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                      <p>Nenhuma mensagem ainda</p>
+                      <p className="text-sm">Suas conversas com a clínica aparecerão aqui</p>
+                    </div>
+                  )}
                 </div>
                 <div className="pt-4">
                   <Button variant="outline" className="w-full" onClick={() => setMessagesModalOpen(true)}>
